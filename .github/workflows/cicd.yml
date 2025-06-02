@@ -3,12 +3,12 @@ name: Todolist CI/CD
 on:
   push:
     branches:
-      - admin-dashboard-testing
+      - main
     paths-ignore:
       - "README.md"
   pull_request:
     branches:
-      - admin-dashboard-testing
+      - main
 
 jobs:
   continuous-integration:
