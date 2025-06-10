@@ -11,9 +11,9 @@ function App() {
     <>
       <Toaster />
       <Routes>
-        <Route path="/" element={<HomePage />} />
         <Route path="/signin" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/user/activate/:token" element={<ActivateEmailPage />} />
 
         {/* prevent user after login */}
