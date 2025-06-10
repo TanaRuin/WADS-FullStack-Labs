@@ -1,30 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import authService from './authService';
-
-// Safely get user from localStorage
-let user = null;
-try {
-  const storedUser = localStorage.getItem('user');
-  if (storedUser && storedUser !== 'undefined') {
-    user = JSON.parse(storedUser);
-  }
-} catch (error) {
-  user = null;
-}
+import todoService from './todoService';
 
 const initialState = {
-  user: user,
+  todos: [],
   isError: false,
   isSuccess: false,
   isLoading: false,
-  isLoggedOut: !user,
   message: ""
 };
 
-// Signup user
-export const signup = createAsyncThunk('auth/signup', async (user, thunkAPI) => {
+// Get all todos
+export const getTodos = createAsyncThunk('todo/getAll', async (_, thunkAPI) => {
   try {
-    return await authService.signup(user);
+    return await todoService.getTodos();
   } catch (error) {
     const message =
       (error.response && error.response.data && error.response.data.message) ||
@@ -35,10 +23,10 @@ export const signup = createAsyncThunk('auth/signup', async (user, thunkAPI) => 
   }
 });
 
-// Signin user
-export const signin = createAsyncThunk('auth/signin', async (user, thunkAPI) => {
+// Create todo
+export const createTodo = createAsyncThunk('todo/create', async (todo, thunkAPI) => {
   try {
-    return await authService.signin(user);
+    return await todoService.createTodo(todo);
   } catch (error) {
     const message =
       (error.response && error.response.data && error.response.data.message) ||
@@ -49,10 +37,10 @@ export const signin = createAsyncThunk('auth/signin', async (user, thunkAPI) => 
   }
 });
 
-// Activate email
-export const activateEmail = createAsyncThunk('auth/activate', async (token, thunkAPI) => {
+// Update todo
+export const updateTodo = createAsyncThunk('todo/update', async ({ id, todo }, thunkAPI) => {
   try {
-    return await authService.activateEmail(token);
+    return await todoService.updateTodo(id, todo);
   } catch (error) {
     const message =
       (error.response && error.response.data && error.response.data.message) ||
@@ -63,10 +51,10 @@ export const activateEmail = createAsyncThunk('auth/activate', async (token, thu
   }
 });
 
-// Get user info
-export const getUserInfo = createAsyncThunk('auth/userInfo', async (_, thunkAPI) => {
+// Delete todo
+export const deleteTodo = createAsyncThunk('todo/delete', async (id, thunkAPI) => {
   try {
-    return await authService.getUserInfo();
+    return await todoService.deleteTodo(id);
   } catch (error) {
     const message =
       (error.response && error.response.data && error.response.data.message) ||
@@ -77,76 +65,69 @@ export const getUserInfo = createAsyncThunk('auth/userInfo', async (_, thunkAPI)
   }
 });
 
-export const authSlice = createSlice({
-  name: 'auth',
+export const todoSlice = createSlice({
+  name: 'todo',
   initialState,
   reducers: {
     reset: (state) => {
-      state.user = null;
       state.isError = false;
       state.isSuccess = false;
       state.isLoading = false;
       state.message = "";
-      state.isLoggedOut = true;
-    },
-    logout: (state) => {
-      localStorage.removeItem('user');
-      state.user = null;
-      state.isLoggedOut = true;
     }
   },
   extraReducers: (builder) => {
     builder
-      .addCase(signup.pending, (state) => {
+      .addCase(getTodos.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(signup.fulfilled, (state, action) => {
+      .addCase(getTodos.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.message = action.payload.message;
+        state.todos = action.payload;
       })
-      .addCase(signup.rejected, (state, action) => {
+      .addCase(getTodos.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
       })
-      .addCase(signin.pending, (state) => {
+      .addCase(createTodo.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(signin.fulfilled, (state, action) => {
+      .addCase(createTodo.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload.user;
-        state.isLoggedOut = false;
-        state.message = action.payload.message;
+        state.todos.push(action.payload);
       })
-      .addCase(signin.rejected, (state, action) => {
+      .addCase(createTodo.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
       })
-      .addCase(activateEmail.pending, (state) => {
+      .addCase(updateTodo.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(activateEmail.fulfilled, (state, action) => {
+      .addCase(updateTodo.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.message = action.payload.message;
+        state.todos = state.todos.map((todo) =>
+          todo._id === action.payload._id ? action.payload : todo
+        );
       })
-      .addCase(activateEmail.rejected, (state, action) => {
+      .addCase(updateTodo.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
       })
-      .addCase(getUserInfo.pending, (state) => {
+      .addCase(deleteTodo.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(getUserInfo.fulfilled, (state, action) => {
+      .addCase(deleteTodo.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload;
+        state.todos = state.todos.filter((todo) => todo._id !== action.payload.id);
       })
-      .addCase(getUserInfo.rejected, (state, action) => {
+      .addCase(deleteTodo.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
@@ -154,5 +135,5 @@ export const authSlice = createSlice({
   }
 });
 
-export const { reset, logout } = authSlice.actions;
-export default authSlice.reducer;
+export const { reset } = todoSlice.actions;
+export default todoSlice.reducer; 

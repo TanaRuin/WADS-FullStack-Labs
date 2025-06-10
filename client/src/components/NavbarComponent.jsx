@@ -1,12 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import LogoImg from "../assets/logo.png";
 import { useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { logout, getUserInfo } from "../features/auth/authSlice";
+import toast from "react-hot-toast";
 
 const NavbarComponent = () => {
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user, isLoggedOut } = useSelector((state) => state.auth);
 
-  const handleLogout = async () => {};
+  useEffect(() => {
+    if (user && !isLoggedOut) {
+      dispatch(getUserInfo());
+    }
+  }, [dispatch, user, isLoggedOut]);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    toast.success("Logged out successfully");
+    navigate("/signin");
+  };
 
   return (
     <nav className="flex w-full justify-between items-center bg-green-100 shadow-md py-3 px-10">
@@ -25,17 +39,17 @@ const NavbarComponent = () => {
         <a href="#" className="text-sm">
           My ToDo
         </a>
-        {user ? (
+        {user && !isLoggedOut ? (
           <div className="flex items-center gap-3">
-            {user.photoURL ? (
+            {user.user_image ? (
               <img
-                src={user?.photoURL}
+                src={user.user_image}
                 alt="profile"
                 className="w-8 h-8 rounded-full"
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-green-800 text-white flex items-center justify-center font-semibold">
-                {user.email.charAt(0).toUpperCase()}
+                {user.name?.charAt(0).toUpperCase()}
               </div>
             )}
             <button
@@ -46,12 +60,20 @@ const NavbarComponent = () => {
             </button>
           </div>
         ) : (
-          <a
-            href="/signin"
-            className="bg-green-800 text-white text-sm py-2 px-6 rounded-md hover:bg-green-700 transition ease-in-out"
-          >
-            Login
-          </a>
+          <div className="flex gap-3">
+            <a
+              href="/signup"
+              className="bg-green-800 text-white text-sm py-2 px-6 rounded-md hover:bg-green-700 transition ease-in-out"
+            >
+              Sign Up
+            </a>
+            <a
+              href="/signin"
+              className="bg-green-800 text-white text-sm py-2 px-6 rounded-md hover:bg-green-700 transition ease-in-out"
+            >
+              Login
+            </a>
+          </div>
         )}
       </div>
     </nav>

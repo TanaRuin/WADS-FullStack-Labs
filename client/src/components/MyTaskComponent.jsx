@@ -2,38 +2,77 @@ import React, { useEffect, useState } from "react";
 import { MdDeleteOutline } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+import { getTodos, updateTodo, deleteTodo, reset } from "../features/todo/todoSlice";
 
 const MyTaskComponent = () => {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [updatedTitle, setUpdatedTitle] = useState("");
   const [updatedDescription, setUpdatedDescription] = useState("");
 
-  const fetchTasks = async () => {};
+  const dispatch = useDispatch();
+  const { todos, isLoading, isError, isSuccess, message } = useSelector((state) => state.todo);
 
-  const handleEdit = (task) => {};
+  useEffect(() => {
+    dispatch(getTodos());
+  }, [dispatch]);
 
-  const handleUpdateTask = async () => {};
+  useEffect(() => {
+    if (isError) {
+      toast.error(message);
+      dispatch(reset());
+    }
 
-  const handleDelete = async (taskId) => {};
+    if (isSuccess) {
+      dispatch(reset());
+    }
+  }, [isError, isSuccess, message, dispatch]);
+
+  const handleEdit = (task) => {
+    setSelectedTask(task);
+    setUpdatedTitle(task.todo_name);
+    setUpdatedDescription(task.todo_desc);
+    document.getElementById("update-modal").showModal();
+  };
+
+  const handleUpdateTask = async () => {
+    if (!updatedTitle.trim()) {
+      toast.error("Please enter a task title");
+      return;
+    }
+
+    const todoData = {
+      todo_name: updatedTitle,
+      todo_desc: updatedDescription,
+      todo_status: selectedTask.todo_status
+    };
+
+    dispatch(updateTodo({ id: selectedTask._id, todo: todoData }));
+    document.getElementById("update-modal").close();
+  };
+
+  const handleDelete = async (taskId) => {
+    if (window.confirm("Are you sure you want to delete this task?")) {
+      dispatch(deleteTodo(taskId));
+    }
+  };
 
   return (
     <div>
-      {loading && <p className="text-gray-600">Loading tasks...</p>}
+      {isLoading && <p className="text-gray-600">Loading tasks...</p>}
 
-      {!loading && tasks.length === 0 && (
+      {!isLoading && todos.length === 0 && (
         <p className="text-gray-500">No tasks available.</p>
       )}
 
-      {!loading &&
-        tasks.map((task) => (
+      {!isLoading &&
+        todos.map((task) => (
           <div
-            key={task.id}
+            key={task._id}
             className="flex flex-col gap-2 mt-2 p-3 text-white bg-green-700 rounded-md shadow-md"
           >
-            <h1 className="text-xl font-semibold mb-2">{task.title}</h1>
-            <p className="text-sm text-gray-100">{task.description}</p>
+            <h1 className="text-xl font-semibold mb-2">{task.todo_name}</h1>
+            <p className="text-sm text-gray-100">{task.todo_desc}</p>
 
             <div className="flex w-full justify-end items-center gap-4 mt-4">
               <button
@@ -46,7 +85,7 @@ const MyTaskComponent = () => {
 
               <button
                 className="btn btn-error bg-red-600 text-white flex gap-1 px-3"
-                onClick={() => handleDelete(task.id)}
+                onClick={() => handleDelete(task._id)}
               >
                 <MdDeleteOutline className="text-lg" />
                 Delete

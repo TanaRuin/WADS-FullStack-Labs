@@ -1,12 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+import { createTodo, reset } from "../features/todo/todoSlice";
 
 const AddTaskComponent = () => {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDesc, setTaskDesc] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleAddTask = async (e) => {};
+  const dispatch = useDispatch();
+  const { isLoading, isError, isSuccess, message } = useSelector((state) => state.todo);
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(message);
+      dispatch(reset());
+    }
+
+    if (isSuccess) {
+      toast.success("Task created successfully!");
+      setTaskTitle("");
+      setTaskDesc("");
+      dispatch(reset());
+    }
+  }, [isError, isSuccess, message, dispatch]);
+
+  const handleAddTask = async (e) => {
+    e.preventDefault();
+
+    if (!taskTitle.trim()) {
+      toast.error("Please enter a task title");
+      return;
+    }
+
+    const todoData = {
+      todo_name: taskTitle,
+      todo_desc: taskDesc,
+      todo_status: "active"
+    };
+
+    dispatch(createTodo(todoData));
+  };
 
   return (
     <>
@@ -34,10 +67,10 @@ const AddTaskComponent = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="btn w-full px-4 py-2 text-sm text-white rounded-md bg-green-600 hover:bg-green-800 transition ease-in-out"
           >
-            {loading ? "Saving..." : "Save"}
+            {isLoading ? "Saving..." : "Save"}
           </button>
         </form>
       </div>
